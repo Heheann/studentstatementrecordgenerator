@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學生陳述紀錄單產生器</title>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-soft: #f6f8fb;
+      --surface-ink: #101927;
+      --line: #cdd6e2;
+      --line-strong: #a5b3c5;
+      --primary: #244b73;
+      --primary-strong: #17304a;
+      --primary-soft: #dfeaf6;
+      --success: #2f6f4e;
+      --warning: #946d1c;
+      --danger: #8b2f2f;
+      --text: #1c2733;
+      --muted: #5d6a79;
+      --shadow: 0 18px 38px rgba(17, 31, 49, 0.08);
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max-width: 1120px;
+      --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: linear-gradient(180deg, #eff4f8 0%, #e8edf4 100%);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(36, 75, 115, 0.12), transparent 30%),
+        linear-gradient(180deg, #eef2f6 0%, #e8edf4 100%);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 14px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .page-shell {
+      width: min(100% - 1.1rem, var(--max-width));
+      margin: 0 auto;
+      padding: 1rem 0 3rem;
+    }
+
+    .page-header {
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      margin-bottom: 1rem;
+      padding-top: 0.65rem;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(180deg, rgba(238, 242, 246, 0.96) 0%, rgba(238, 242, 246, 0.84) 100%);
+    }
+
+    .hero {
+      padding: 1.15rem 1rem 0.8rem;
+      border: 1px solid rgba(165, 179, 197, 0.5);
+      border-radius: 26px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 251, 0.96));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-top {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(36, 75, 115, 0.1);
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .hero h1 {
+      margin: 0;
+      color: var(--surface-ink);
+      font-size: clamp(1.7rem, 4.8vw, 2.6rem);
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .hero-meta {
+      display: grid;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .meta-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid rgba(165, 179, 197, 0.55);
+      border-radius: 16px;
+      background: var(--surface-soft);
+    }
+
+    .meta-chip strong {
+      display: block;
+      color: var(--surface-ink);
+      font-size: 0.96rem;
+    }
+
+    .meta-chip span {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      min-height: 3rem;
+      padding: 0.8rem 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, var(--primary) 0%, var(--primary-strong) 100%);
+      color: #fff;
+      box-shadow: 0 14px 26px rgba(36, 75, 115, 0.24);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--surface-ink);
+    }
+
+    .btn-ghost {
+      background: rgba(36, 75, 115, 0.08);
+      color: var(--primary-strong);
+    }
+
+    .btn-danger {
+      background: rgba(139, 47, 47, 0.08);
+      color: var(--danger);
+    }
+
+    .btn-voice-start {
+      background: rgba(36, 75, 115, 0.12);
+      color: var(--primary-strong);
+    }
+
+    .btn-voice-stop {
+      background: rgba(139, 47, 47, 0.08);
+      color: var(--danger);
+    }
+
+    .status-banner {
+      display: none;
+      margin-top: 0.9rem;
+      padding: 0.8rem 1rem;
+      border-radius: 16px;
+      font-size: 0.94rem;
+      font-weight: 600;
+    }
+
+    .status-banner.is-visible {
+      display: block;
+    }
+
+    .status-info {
+      background: rgba(36, 75, 115, 0.1);
+      color: var(--primary-strong);
+    }
+
+    .status-success {
+      background: rgba(47, 111, 78, 0.12);
+      color: var(--success);
+    }
+
+    .status-warning {
+      background: rgba(148, 109, 28, 0.12);
+      color: var(--warning);
+    }
+
+    .status-error {
+      background: rgba(139, 47, 47, 0.11);
+      color: var(--danger);
+    }
+
+    .content-grid,
+    .record-document {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .card {
+      border: 1px solid rgba(165, 179, 197, 0.5);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1rem 0;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      color: var(--surface-ink);
+      font-size: 1.15rem;
+    }
+
+    .card-header p {
+      margin: 0.3rem 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    .info-grid,
+    .two-column-grid {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .field-group {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .field-group label,
+    .fieldset-title {
+      color: var(--surface-ink);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .field-group small,
+    .helper-text {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .input,
+    .textarea,
+    .select {
+      width: 100%;
+      min-height: 3rem;
+      padding: 0.8rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--text);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .input:focus,
+    .textarea:focus,
+    .select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(36, 75, 115, 0.12);
+    }
+
+    .input[readonly] {
+      background: var(--surface-soft);
+      color: var(--primary-strong);
+      font-weight: 700;
+    }
+
+    .textarea {
+      min-height: 8rem;
+      resize: vertical;
+      overflow: hidden;
+    }
+
+    .inline-grid {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.1rem;
+    }
+
+    .check-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .check-chip input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .check-chip span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.7rem;
+      padding: 0.65rem 0.9rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-soft);
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .check-chip input:checked + span {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+    }
+
+    .conditional-input {
+      display: none;
+      margin-top: 0.65rem;
+    }
+
+    .conditional-input.is-visible {
+      display: block;
+    }
+
+    .statement-tools {
+      display: grid;
+      gap: 0.8rem;
+      margin-bottom: 0.85rem;
+      padding: 0.85rem;
+      border: 1px solid rgba(165, 179, 197, 0.55);
+      border-radius: 18px;
+      background: var(--surface-soft);
+    }
+
+    .voice-toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+
+    .voice-status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      align-items: center;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--surface-ink);
+    }
+
+    .voice-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.38rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(36, 75, 115, 0.1);
+      color: var(--primary-strong);
+    }
+
+    .voice-pill.is-warning {
+      background: rgba(148, 109, 28, 0.12);
+      color: var(--warning);
+    }
+
+    .voice-pill.is-danger {
+      background: rgba(139, 47, 47, 0.1);
+      color: var(--danger);
+    }
+
+    .quick-actions {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding: 0.85rem;
+      border-radius: 18px;
+      background: var(--surface-soft);
+      border: 1px solid rgba(165, 179, 197, 0.55);
+    }
+
+    .quick-actions h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--surface-ink);
+    }
+
+    .quick-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .quick-btn {
+      padding: 0.7rem 0.85rem;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--surface-ink);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .confirmation-box {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 18px;
+      background: var(--surface-soft);
+      border: 1px solid rgba(165, 179, 197, 0.55);
+      color: var(--surface-ink);
+      font-weight: 600;
+    }
+
+    .signature-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .signature-panel {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .signature-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .signature-head strong {
+      color: var(--surface-ink);
+      font-size: 0.95rem;
+    }
+
+    .signature-canvas-wrap {
+      position: relative;
+      padding: 0.9rem;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(246, 248, 251, 0.92) 0%, rgba(255, 255, 255, 1) 100%);
+    }
+
+    .signature-canvas {
+      display: block;
+      width: 100%;
+      height: 180px;
+      border-radius: 12px;
+      background: #fff;
+      touch-action: none;
+    }
+
+    .signature-note {
+      position: absolute;
+      right: 1.25rem;
+      bottom: 1rem;
+      color: rgba(93, 106, 121, 0.65);
+      font-size: 0.82rem;
+      pointer-events: none;
+    }
+
+    .history-toolbar {
+      display: grid;
+      gap: 0.8rem;
+      margin-bottom: 0.95rem;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .history-empty {
+      padding: 1rem;
+      border: 1px dashed var(--line-strong);
+      border-radius: 18px;
+      background: var(--surface-soft);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .history-item {
+      display: grid;
+      gap: 0.8rem;
+      padding: 1rem;
+      border: 1px solid rgba(165, 179, 197, 0.55);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
+    }
+
+    .history-item-top {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .history-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem 0.8rem;
+      align-items: center;
+    }
+
+    .history-title strong {
+      color: var(--surface-ink);
+      font-size: 1rem;
+    }
+
+    .history-subtext {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .history-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .mini-btn {
+      min-height: 2.6rem;
+      padding: 0.6rem 0.7rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    .document-section {
+      page-break-inside: avoid;
+    }
+
+    .document-cover {
+      display: grid;
+      gap: 0.5rem;
+      text-align: left;
+    }
+
+    .document-cover h2 {
+      margin: 0;
+      color: var(--surface-ink);
+      font-size: clamp(1.35rem, 3.4vw, 1.9rem);
+      line-height: 1.25;
+    }
+
+    .document-cover p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .footer-note {
+      margin-top: 1rem;
+      color: var(--muted);
+      font-size: 0.86rem;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (min-width: 720px) {
+      .page-shell {
+        width: min(100% - 2rem, var(--max-width));
+      }
+
+      .hero {
+        padding: 1.25rem 1.25rem 1rem;
+      }
+
+      .hero-top {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+        align-items: start;
+      }
+
+      .hero-meta {
+        margin-top: 0;
+      }
+
+      .toolbar {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .two-column-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .history-toolbar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .signature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+
+      html,
+      body {
+        background: #fff !important;
+      }
+
+      body {
+        font-size: 12pt;
+      }
+
+      .page-shell {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .page-header,
+      .toolbar,
+      .status-banner,
+      .history-card,
+      .no-print,
+      .footer-note {
+        display: none !important;
+      }
+
+      .card {
+        box-shadow: none;
+        border: 1px solid #9aa8b8;
+        border-radius: 12px;
+        background: #fff;
+      }
+
+      .card-header,
+      .card-body {
+        padding: 0.65rem 0.8rem;
+      }
+
+      .card-header p,
+      .helper-text {
+        color: #555 !important;
+      }
+
+      .input,
+      .select,
+      .textarea {
+        border: 1px solid #9aa8b8;
+        border-radius: 8px;
+        box-shadow: none !important;
+        background: #fff !important;
+        color: #111;
+      }
+
+      .quick-actions,
+      .statement-tools {
+        display: none !important;
+      }
+
+      .signature-canvas-wrap {
+        border: 1px solid #9aa8b8;
+        background: #fff;
+        break-inside: avoid;
+      }
+
+      .signature-canvas {
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="page-header no-print">
+      <section class="hero">
+        <div class="hero-top">
+          <div>
+            <span class="eyebrow">校園現場即時紀錄工具</span>
+            <h1>學生陳述紀錄單產生器</h1>
+            <p>用於記錄學生當下陳述內容、教師補充與後續處理，可即時儲存、列印簽名與回查歷史紀錄。</p>
+          </div>
+          <div class="hero-meta">
+            <div class="meta-chip">
+              <div>
+                <strong>目前紀錄編號</strong>
+                <span>儲存後會保留於本機瀏覽器</span>
+              </div>
+              <strong id="headerRecordNumber">尚未建立</strong>
+            </div>
+            <div class="meta-chip">
+              <div>
+                <strong>草稿狀態</strong>
+                <span>輸入時會自動儲存草稿</span>
+              </div>
+              <strong id="draftStatus">待機中</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn btn-primary" id="newRecordBtn" type="button">新增紀錄</button>
+          <button class="btn btn-primary" id="saveRecordBtn" type="button">儲存紀錄</button>
+          <button class="btn btn-secondary" id="printBtn" type="button">列印</button>
+          <button class="btn btn-secondary" id="exportBtn" type="button">匯出 JSON</button>
+          <button class="btn btn-secondary" id="importBtn" type="button">匯入 JSON</button>
+          <button class="btn btn-ghost" id="toggleHistoryBtn" type="button">查看歷史紀錄</button>
+        </div>
+
+        <div class="status-banner status-info" id="statusBanner" role="status" aria-live="polite"></div>
+      </section>
+    </header>
+
+    <main class="record-document" id="printDocument">
+      <form id="recordForm" autocomplete="off">
+        <section class="card document-section">
+          <div class="card-body">
+            <div class="document-cover">
+              <span class="eyebrow">正式紀錄文件</span>
+              <h2>學生陳述紀錄單</h2>
+              <p>本紀錄用於現場留存學生陳述內容、教師補充與後續處理，列印後可供當事學生與教師確認簽名。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card document-section">
+          <div class="card-header">
+            <div>
+              <h2>基本資料</h2>
+              <p>請先確認紀錄編號、日期與人員資料，方便後續檢視與列印。</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="info-grid">
+              <div class="field-group">
+                <label for="recordNumber">紀錄編號</label>
+                <input class="input" id="recordNumber" name="recordNumber" type="text" readonly>
+              </div>
+              <div class="field-group">
+                <label for="recordDate">紀錄日期</label>
+                <input class="input" id="recordDate" name="recordDate" type="date">
+              </div>
+              <div class="field-group">
+                <label for="recordTime">紀錄時間</label>
+                <input class="input" id="recordTime" name="recordTime" type="time">
+              </div>
+              <div class="field-group">
+                <label for="location">地點</label>
+                <input class="input" id="location" name="location" type="text" placeholder="例如：導師辦公桌旁、輔導室、教室">
+              </div>
+              <div class="field-group">
+                <label for="studentName">學生姓名</label>
+                <input class="input" id="studentName" name="studentName" type="text" placeholder="請輸入學生姓名">
+              </div>
+              <div class="field-group">
+                <label for="className">班級</label>
+                <input class="input" id="className" name="className" type="text" placeholder="例如：三年二班">
+              </div>
+              <div class="field-group">
+                <label for="studentNumber">學號（可選）</label>
+                <input class="input" id="studentNumber" name="studentNumber" type="text" placeholder="可留白">
+              </div>
+              <div class="field-group">
+                <label for="recorder">紀錄人（老師）</label>
+                <input class="input" id="recorder" name="recorder" type="text" placeholder="請輸入紀錄人姓名">
+              </div>
+              <div class="field-group" style="grid-column: 1 / -1;">
+                <label for="attendees">在場人員</label>
+                <input class="input" id="attendees" name="attendees" type="text" placeholder="例如：學生甲、導師、輔導老師">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card document-section">
+          <div class="card-header">
+            <div>
+              <h2>事件資訊</h2>
+              <p>此區用於標記事件類型、陳述方式與當下情緒狀態，保持中性、描述性紀錄。</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="inline-grid">
+              <div class="field-group">
+                <div class="fieldset-title">事件性質（可複選）</div>
+                <div class="chip-group">
+                  <label class="check-chip"><input type="checkbox" name="eventTypes" value="同儕糾紛"><span>同儕糾紛</span></label>
+                  <label class="check-chip"><input type="checkbox" name="eventTypes" value="言語衝突"><span>言語衝突</span></label>
+                  <label class="check-chip"><input type="checkbox" name="eventTypes" value="肢體衝突"><span>肢體衝突</span></label>
+                  <label class="check-chip"><input type="checkbox" name="eventTypes" value="課堂事件"><span>課堂事件</span></label>
+                  <label class="check-chip"><input type="checkbox" name="eventTypes" value="情緒事件"><span>情緒事件</span></label>
+                  <label class="check-chip"><input type="checkbox" name="eventTypes" value="霸凌疑慮"><span>霸凌疑慮</span></label>
+                  <label class="check-chip"><input type="checkbox" name="eventTypes" value="其他"><span>其他</span></label>
+                </div>
+                <div class="conditional-input" id="eventTypeOtherWrap">
+                  <input class="input" id="eventTypeOther" name="eventTypeOther" type="text" placeholder="請補充事件性質">
+                </div>
+              </div>
+
+              <div class="two-column-grid">
+                <div class="field-group">
+                  <div class="fieldset-title">陳述方式</div>
+                  <div class="chip-group">
+                    <label class="check-chip"><input type="radio" name="statementMode" value="主動告知"><span>主動告知</span></label>
+                    <label class="check-chip"><input type="radio" name="statementMode" value="老師詢問後陳述"><span>老師詢問後陳述</span></label>
+                    <label class="check-chip"><input type="radio" name="statementMode" value="其他"><span>其他</span></label>
+                  </div>
+                  <div class="conditional-input" id="statementModeOtherWrap">
+                    <input class="input" id="statementModeOther" name="statementModeOther" type="text" placeholder="請補充陳述方式">
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <div class="fieldset-title">情緒狀態</div>
+                  <div class="chip-group">
+                    <label class="check-chip"><input type="radio" name="emotionState" value="平穩"><span>平穩</span></label>
+                    <label class="check-chip"><input type="radio" name="emotionState" value="激動"><span>激動</span></label>
+                    <label class="check-chip"><input type="radio" name="emotionState" value="哭泣"><span>哭泣</span></label>
+                    <label class="check-chip"><input type="radio" name="emotionState" value="沉默"><span>沉默</span></label>
+                    <label class="check-chip"><input type="radio" name="emotionState" value="其他"><span>其他</span></label>
+                  </div>
+                  <div class="conditional-input" id="emotionStateOtherWrap">
+                    <input class="input" id="emotionStateOther" name="emotionStateOther" type="text" placeholder="請補充情緒狀態">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card document-section">
+          <div class="card-header">
+            <div>
+              <h2>學生陳述內容</h2>
+              <p>請盡量記錄學生原始說法，避免加入推測或定論。</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="statement-tools no-print">
+              <div class="voice-toolbar">
+                <button class="btn btn-voice-start" id="startVoiceBtn" type="button">開始語音輸入</button>
+                <button class="btn btn-voice-stop" id="stopVoiceBtn" type="button" disabled>停止語音輸入</button>
+              </div>
+              <div class="voice-status">
+                <span>語音狀態</span>
+                <span class="voice-pill" id="voiceStateText">待機中</span>
+                <span class="helper-text" id="voiceHintText">建議使用 Chrome 或 Edge 以取得較佳繁體中文辨識體驗。</span>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="studentStatement">學生陳述內容（原話紀錄）</label>
+              <textarea class="textarea" id="studentStatement" name="studentStatement" rows="9" placeholder="請記錄學生口述內容，保留其原意與說法。"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="card document-section">
+          <div class="card-header">
+            <div>
+              <h2>教師補充與後續處理</h2>
+              <p>請明確區分學生原話與教師補充，保留事實紀錄與後續處理空間。</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="field-group">
+              <label for="backgroundSummary">事件背景摘要</label>
+              <textarea class="textarea" id="backgroundSummary" name="backgroundSummary" rows="5" placeholder="簡要說明事件脈絡與目前已知背景。"></textarea>
+            </div>
+
+            <div class="field-group">
+              <label for="teacherNotes">教師補充紀錄</label>
+              <textarea class="textarea" id="teacherNotes" name="teacherNotes" rows="5" placeholder="請記錄教師觀察、澄清或需補充的事實內容。"></textarea>
+            </div>
+
+            <div class="field-group">
+              <label for="followUp">後續處理</label>
+              <textarea class="textarea" id="followUp" name="followUp" rows="5" placeholder="請記錄後續安排、聯繫方式、追蹤方向或待處理事項。"></textarea>
+            </div>
+
+            <div class="quick-actions no-print">
+              <h3>常用語句快速插入</h3>
+              <div class="quick-buttons">
+                <button class="quick-btn" type="button" data-target="teacherNotes" data-text="學生主動前來反映。">學生主動前來反映</button>
+                <button class="quick-btn" type="button" data-target="teacherNotes" data-text="經安撫後可完整表達。">經安撫後可完整表達</button>
+                <button class="quick-btn" type="button" data-target="followUp" data-text="已先行紀錄，後續持續了解。">已先行紀錄，後續持續了解</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card document-section">
+          <div class="card-header">
+            <div>
+              <h2>學生確認與簽名</h2>
+              <p>可使用滑鼠或手指於下方簽名，列印時會一併保留在正式文件中。</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="confirmation-box">
+              本人確認以上內容為本人於當下所做之陳述，經閱讀後確認內容無誤，並願意對本人言論負責。
+            </div>
+
+            <div class="field-group" style="margin-bottom: 1rem;">
+              <label for="studentConfirmationDate">確認日期</label>
+              <input class="input" id="studentConfirmationDate" name="studentConfirmationDate" type="date">
+            </div>
+
+            <div class="signature-grid">
+              <div class="signature-panel">
+                <div class="signature-head">
+                  <strong>學生簽名區</strong>
+                  <button class="mini-btn btn-danger no-print" id="clearStudentSignatureBtn" type="button">清空簽名</button>
+                </div>
+                <div class="signature-canvas-wrap">
+                  <canvas class="signature-canvas" id="studentSignatureCanvas"></canvas>
+                  <span class="signature-note">可用滑鼠或手指簽名</span>
+                </div>
+              </div>
+
+              <div class="signature-panel">
+                <div class="signature-head">
+                  <strong>教師簽名區</strong>
+                  <button class="mini-btn btn-danger no-print" id="clearTeacherSignatureBtn" type="button">清空簽名</button>
+                </div>
+                <div class="signature-canvas-wrap">
+                  <canvas class="signature-canvas" id="teacherSignatureCanvas"></canvas>
+                  <span class="signature-note">可用滑鼠或手指簽名</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </form>
+
+      <section class="card history-card no-print" id="historySection">
+        <div class="card-header">
+          <div>
+            <h2>歷史紀錄</h2>
+            <p>可依學生姓名與日期搜尋，點選後載入編輯，或匯出單筆 JSON 備份。</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="history-toolbar">
+            <div class="field-group">
+              <label for="historySearchName">搜尋學生姓名</label>
+              <input class="input" id="historySearchName" type="text" placeholder="輸入學生姓名">
+            </div>
+            <div class="field-group">
+              <label for="historySearchDate">搜尋日期</label>
+              <input class="input" id="historySearchDate" type="date">
+            </div>
+            <div class="field-group" style="align-self: end;">
+              <button class="btn btn-secondary" id="clearSearchBtn" type="button">清除搜尋條件</button>
+            </div>
+          </div>
+
+          <div class="history-list" id="historyList"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="footer-note no-print">
+      本工具僅保存於目前瀏覽器的本機儲存空間，若需跨裝置保存，請另行匯出 JSON 備份。
+    </div>
+  </div>
+
+  <input id="importFileInput" type="file" accept=".json,application/json" class="hidden">
+
+  <script>
+    // ================================
+    // 常數與全域狀態
+    // ================================
+
+    var STORAGE_KEYS = {
+      records: "statement-records",
+      draft: "statement-draft",
+      seqMap: "statement-seq-map"
+    };
+
+    var appState = {
+      currentRecordId: "",
+      currentCreatedAt: "",
+      isSavedRecord: false,
+      recognition: null,
+      isRecognizing: false,
+      speechBaseText: "",
+      speechManualStop: false,
+      speechSupported: false,
+      draftTimer: null,
+      signaturePads: {},
+      autoStatusTimer: null
+    };
+
+    var form = document.getElementById("recordForm");
+    var statusBanner = document.getElementById("statusBanner");
+    var draftStatus = document.getElementById("draftStatus");
+    var headerRecordNumber = document.getElementById("headerRecordNumber");
+    var historyList = document.getElementById("historyList");
+    var importFileInput = document.getElementById("importFileInput");
+    var historySection = document.getElementById("historySection");
+    var voiceStateText = document.getElementById("voiceStateText");
+    var voiceHintText = document.getElementById("voiceHintText");
+    var startVoiceBtn = document.getElementById("startVoiceBtn");
+    var stopVoiceBtn = document.getElementById("stopVoiceBtn");
+
+    // ================================
+    // 基本工具函式
+    // ================================
+
+    function padNumber(value) {
+      return value < 10 ? "0" + value : String(value);
+    }
+
+    function formatDateInput(date) {
+      return date.getFullYear() + "-" + padNumber(date.getMonth() + 1) + "-" + padNumber(date.getDate());
+    }
+
+    function formatTimeInput(date) {
+      return padNumber(date.getHours()) + ":" + padNumber(date.getMinutes());
+    }
+
+    function dateKeyFromInput(dateString) {
+      return String(dateString || "").replace(/-/g, "");
+    }
+
+    function generateId() {
+      return "record-" + Date.now() + "-" + Math.floor(Math.random() * 1000000);
+    }
+
+    function formatSequenceNumber(value) {
+      value = Number(value) || 0;
+      if (value < 10) {
+        return "00" + value;
+      }
+      if (value < 100) {
+        return "0" + value;
+      }
+      return String(value);
+    }
+
+    function safeParse(jsonText, fallbackValue) {
+      try {
+        return JSON.parse(jsonText);
+      } catch (error) {
+        return fallbackValue;
+      }
+    }
+
+    function getStorageItem(key, fallbackValue) {
+      try {
+        var raw = localStorage.getItem(key);
+        if (!raw) {
+          return fallbackValue;
+        }
+        return safeParse(raw, fallbackValue);
+      } catch (error) {
+        showStatus("無法讀取本機儲存資料，請確認瀏覽器是否允許 localStorage。", "error");
+        return fallbackValue;
+      }
+    }
+
+    function setStorageItem(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (error) {
+        showStatus("本機儲存空間不足或瀏覽器限制儲存，請先匯出重要紀錄。", "error");
+      }
+    }
+
+    function showStatus(message, tone) {
+      clearTimeout(appState.autoStatusTimer);
+      statusBanner.textContent = message;
+      statusBanner.className = "status-banner is-visible";
+      if (tone === "success") {
+        statusBanner.classList.add("status-success");
+      } else if (tone === "warning") {
+        statusBanner.classList.add("status-warning");
+      } else if (tone === "error") {
+        statusBanner.classList.add("status-error");
+      } else {
+        statusBanner.classList.add("status-info");
+      }
+
+      appState.autoStatusTimer = setTimeout(function () {
+        statusBanner.className = "status-banner";
+        statusBanner.textContent = "";
+      }, 4200);
+    }
+
+    function setDraftStatus(text) {
+      draftStatus.textContent = text;
+    }
+
+    function updateHeaderRecordNumber() {
+      headerRecordNumber.textContent = document.getElementById("recordNumber").value || "尚未建立";
+    }
+
+    function autoResizeTextarea(textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = Math.max(textarea.scrollHeight, 140) + "px";
+    }
+
+    function autoResizeAllTextareas() {
+      var textareas = form.querySelectorAll("textarea");
+      for (var i = 0; i < textareas.length; i += 1) {
+        autoResizeTextarea(textareas[i]);
+      }
+    }
+
+    function appendTextToTextarea(textarea, text) {
+      var current = textarea.value.replace(/\s+$/g, "");
+      var addition = text.replace(/^\s+/g, "");
+      textarea.value = current ? current + "\n" + addition : addition;
+      autoResizeTextarea(textarea);
+      scheduleDraftSave("草稿已更新");
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // ================================
+    // 紀錄資料與序號管理
+    // ================================
+
+    function getRecords() {
+      var records = getStorageItem(STORAGE_KEYS.records, []);
+      if (!Array.isArray(records)) {
+        return [];
+      }
+      records.sort(function (a, b) {
+        return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+      });
+      return records;
+    }
+
+    function saveRecords(records) {
+      records.sort(function (a, b) {
+        return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+      });
+      setStorageItem(STORAGE_KEYS.records, records);
+    }
+
+    function getSequenceMap() {
+      var seqMap = getStorageItem(STORAGE_KEYS.seqMap, {});
+      if (!seqMap || typeof seqMap !== "object" || Array.isArray(seqMap)) {
+        return {};
+      }
+      return seqMap;
+    }
+
+    function peekNextRecordNumber(dateString) {
+      var dateKey = dateKeyFromInput(dateString) || dateKeyFromInput(formatDateInput(new Date()));
+      var seqMap = getSequenceMap();
+      var nextSequence = Number(seqMap[dateKey] || 0) + 1;
+      return dateKey + "-" + formatSequenceNumber(nextSequence);
+    }
+
+    function takeNextRecordNumber(dateString) {
+      var dateKey = dateKeyFromInput(dateString) || dateKeyFromInput(formatDateInput(new Date()));
+      var seqMap = getSequenceMap();
+      var nextSequence = Number(seqMap[dateKey] || 0) + 1;
+      seqMap[dateKey] = nextSequence;
+      setStorageItem(STORAGE_KEYS.seqMap, seqMap);
+      return dateKey + "-" + formatSequenceNumber(nextSequence);
+    }
+
+    function buildDefaultRecord() {
+      var now = new Date();
+      var today = formatDateInput(now);
+      return {
+        id: generateId(),
+        recordNumber: peekNextRecordNumber(today),
+        recordDate: today,
+        recordTime: formatTimeInput(now),
+        location: "",
+        studentName: "",
+        className: "",
+        studentNumber: "",
+        recorder: "",
+        attendees: "",
+        eventTypes: [],
+        eventTypeOther: "",
+        statementMode: "",
+        statementModeOther: "",
+        emotionState: "",
+        emotionStateOther: "",
+        studentStatement: "",
+        backgroundSummary: "",
+        teacherNotes: "",
+        followUp: "",
+        studentConfirmationDate: today,
+        studentSignatureDataUrl: "",
+        teacherSignatureDataUrl: "",
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      };
+    }
+
+    function normalizeRecord(rawRecord) {
+      var base = buildDefaultRecord();
+      var record = rawRecord || {};
+
+      base.id = typeof record.id === "string" && record.id ? record.id : base.id;
+      base.recordNumber = typeof record.recordNumber === "string" && record.recordNumber ? record.recordNumber : base.recordNumber;
+      base.recordDate = typeof record.recordDate === "string" && record.recordDate ? record.recordDate : base.recordDate;
+      base.recordTime = typeof record.recordTime === "string" && record.recordTime ? record.recordTime : base.recordTime;
+      base.location = typeof record.location === "string" ? record.location : "";
+      base.studentName = typeof record.studentName === "string" ? record.studentName : "";
+      base.className = typeof record.className === "string" ? record.className : "";
+      base.studentNumber = typeof record.studentNumber === "string" ? record.studentNumber : "";
+      base.recorder = typeof record.recorder === "string" ? record.recorder : "";
+      base.attendees = typeof record.attendees === "string" ? record.attendees : "";
+      base.eventTypes = Array.isArray(record.eventTypes) ? record.eventTypes.slice(0) : [];
+      base.eventTypeOther = typeof record.eventTypeOther === "string" ? record.eventTypeOther : "";
+      base.statementMode = typeof record.statementMode === "string" ? record.statementMode : "";
+      base.statementModeOther = typeof record.statementModeOther === "string" ? record.statementModeOther : "";
+      base.emotionState = typeof record.emotionState === "string" ? record.emotionState : "";
+      base.emotionStateOther = typeof record.emotionStateOther === "string" ? record.emotionStateOther : "";
+      base.studentStatement = typeof record.studentStatement === "string" ? record.studentStatement : "";
+      base.backgroundSummary = typeof record.backgroundSummary === "string" ? record.backgroundSummary : "";
+      base.teacherNotes = typeof record.teacherNotes === "string" ? record.teacherNotes : "";
+      base.followUp = typeof record.followUp === "string" ? record.followUp : "";
+      base.studentConfirmationDate = typeof record.studentConfirmationDate === "string" && record.studentConfirmationDate ? record.studentConfirmationDate : base.studentConfirmationDate;
+      base.studentSignatureDataUrl = typeof record.studentSignatureDataUrl === "string" ? record.studentSignatureDataUrl : "";
+      base.teacherSignatureDataUrl = typeof record.teacherSignatureDataUrl === "string" ? record.teacherSignatureDataUrl : "";
+      base.createdAt = typeof record.createdAt === "string" && record.createdAt ? record.createdAt : base.createdAt;
+      base.updatedAt = typeof record.updatedAt === "string" && record.updatedAt ? record.updatedAt : base.updatedAt;
+
+      return base;
+    }
+
+    function exportRecordToFile(record) {
+      var exportBlob = new Blob([JSON.stringify(record, null, 2)], { type: "application/json" });
+      var link = document.createElement("a");
+      var safeName = (record.studentName || "學生").replace(/[\\/:*?"<>|]/g, "_");
+      var fileName = (record.recordNumber || "statement-record") + "-" + safeName + ".json";
+      link.href = URL.createObjectURL(exportBlob);
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    // ================================
+    // 表單序列化與畫面回填
+    // ================================
+
+    function getCheckedValues(name) {
+      var result = [];
+      var nodes = form.querySelectorAll('input[name="' + name + '"]:checked');
+      for (var i = 0; i < nodes.length; i += 1) {
+        result.push(nodes[i].value);
+      }
+      return result;
+    }
+
+    function getSelectedRadioValue(name) {
+      var node = form.querySelector('input[name="' + name + '"]:checked');
+      return node ? node.value : "";
+    }
+
+    function setSelectedRadioValue(name, value) {
+      var nodes = form.querySelectorAll('input[name="' + name + '"]');
+      for (var i = 0; i < nodes.length; i += 1) {
+        nodes[i].checked = nodes[i].value === value;
+      }
+    }
+
+    function setCheckedValues(name, values) {
+      var nodes = form.querySelectorAll('input[name="' + name + '"]');
+      for (var i = 0; i < nodes.length; i += 1) {
+        nodes[i].checked = values.indexOf(nodes[i].value) > -1;
+      }
+    }
+
+    function getCurrentRecord() {
+      var now = new Date().toISOString();
+      var studentSignatureDataUrl = appState.signaturePads.student ? appState.signaturePads.student.toDataUrl() : "";
+      var teacherSignatureDataUrl = appState.signaturePads.teacher ? appState.signaturePads.teacher.toDataUrl() : "";
+
+      return normalizeRecord({
+        id: appState.currentRecordId,
+        recordNumber: document.getElementById("recordNumber").value.trim(),
+        recordDate: document.getElementById("recordDate").value,
+        recordTime: document.getElementById("recordTime").value,
+        location: document.getElementById("location").value.trim(),
+        studentName: document.getElementById("studentName").value.trim(),
+        className: document.getElementById("className").value.trim(),
+        studentNumber: document.getElementById("studentNumber").value.trim(),
+        recorder: document.getElementById("recorder").value.trim(),
+        attendees: document.getElementById("attendees").value.trim(),
+        eventTypes: getCheckedValues("eventTypes"),
+        eventTypeOther: document.getElementById("eventTypeOther").value.trim(),
+        statementMode: getSelectedRadioValue("statementMode"),
+        statementModeOther: document.getElementById("statementModeOther").value.trim(),
+        emotionState: getSelectedRadioValue("emotionState"),
+        emotionStateOther: document.getElementById("emotionStateOther").value.trim(),
+        studentStatement: document.getElementById("studentStatement").value.trim(),
+        backgroundSummary: document.getElementById("backgroundSummary").value.trim(),
+        teacherNotes: document.getElementById("teacherNotes").value.trim(),
+        followUp: document.getElementById("followUp").value.trim(),
+        studentConfirmationDate: document.getElementById("studentConfirmationDate").value,
+        studentSignatureDataUrl: studentSignatureDataUrl,
+        teacherSignatureDataUrl: teacherSignatureDataUrl,
+        createdAt: appState.currentCreatedAt || now,
+        updatedAt: now
+      });
+    }
+
+    function loadRecordIntoForm(record, options) {
+      var normalized = normalizeRecord(record);
+      var modeOptions = options || {};
+
+      appState.currentRecordId = normalized.id;
+      appState.currentCreatedAt = normalized.createdAt;
+      appState.isSavedRecord = !!modeOptions.isSavedRecord;
+
+      document.getElementById("recordNumber").value = normalized.recordNumber;
+      document.getElementById("recordDate").value = normalized.recordDate;
+      document.getElementById("recordTime").value = normalized.recordTime;
+      document.getElementById("location").value = normalized.location;
+      document.getElementById("studentName").value = normalized.studentName;
+      document.getElementById("className").value = normalized.className;
+      document.getElementById("studentNumber").value = normalized.studentNumber;
+      document.getElementById("recorder").value = normalized.recorder;
+      document.getElementById("attendees").value = normalized.attendees;
+      setCheckedValues("eventTypes", normalized.eventTypes);
+      document.getElementById("eventTypeOther").value = normalized.eventTypeOther;
+      setSelectedRadioValue("statementMode", normalized.statementMode);
+      document.getElementById("statementModeOther").value = normalized.statementModeOther;
+      setSelectedRadioValue("emotionState", normalized.emotionState);
+      document.getElementById("emotionStateOther").value = normalized.emotionStateOther;
+      document.getElementById("studentStatement").value = normalized.studentStatement;
+      document.getElementById("backgroundSummary").value = normalized.backgroundSummary;
+      document.getElementById("teacherNotes").value = normalized.teacherNotes;
+      document.getElementById("followUp").value = normalized.followUp;
+      document.getElementById("studentConfirmationDate").value = normalized.studentConfirmationDate;
+
+      updateConditionalFields();
+      autoResizeAllTextareas();
+      updateHeaderRecordNumber();
+
+      if (appState.signaturePads.student) {
+        appState.signaturePads.student.fromDataUrl(normalized.studentSignatureDataUrl);
+      }
+      if (appState.signaturePads.teacher) {
+        appState.signaturePads.teacher.fromDataUrl(normalized.teacherSignatureDataUrl);
+      }
+
+      saveDraft(false);
+    }
+
+    function createNewRecord() {
+      var record = buildDefaultRecord();
+      loadRecordIntoForm(record, { isSavedRecord: false });
+      setDraftStatus("新草稿");
+      showStatus("已建立新的空白紀錄。", "info");
+    }
+
+    // ================================
+    // 草稿與正式儲存
+    // ================================
+
+    function saveDraft(showBanner) {
+      var payload = {
+        context: {
+          currentRecordId: appState.currentRecordId,
+          currentCreatedAt: appState.currentCreatedAt,
+          isSavedRecord: appState.isSavedRecord
+        },
+        record: getCurrentRecord()
+      };
+      setStorageItem(STORAGE_KEYS.draft, payload);
+      updateHeaderRecordNumber();
+      setDraftStatus(appState.isSavedRecord ? "已同步草稿" : "草稿已保存");
+      if (showBanner !== false) {
+        showStatus("草稿已自動儲存。", "success");
+      }
+    }
+
+    function scheduleDraftSave(statusText) {
+      clearTimeout(appState.draftTimer);
+      setDraftStatus(statusText || "儲存中...");
+      appState.draftTimer = setTimeout(function () {
+        saveDraft(false);
+      }, 450);
+    }
+
+    function loadDraft() {
+      var draft = getStorageItem(STORAGE_KEYS.draft, null);
+      if (!draft || !draft.record) {
+        createNewRecord();
+        return;
+      }
+
+      var normalized = normalizeRecord(draft.record);
+      loadRecordIntoForm(normalized, {
+        isSavedRecord: !!(draft.context && draft.context.isSavedRecord)
+      });
+      appState.currentRecordId = draft.context && draft.context.currentRecordId ? draft.context.currentRecordId : normalized.id;
+      appState.currentCreatedAt = draft.context && draft.context.currentCreatedAt ? draft.context.currentCreatedAt : normalized.createdAt;
+      appState.isSavedRecord = !!(draft.context && draft.context.isSavedRecord);
+      setDraftStatus("已還原草稿");
+      showStatus("已還原上次未完成的草稿。", "info");
+    }
+
+    function handleSaveRecord() {
+      var records = getRecords();
+      var record = getCurrentRecord();
+      var now = new Date().toISOString();
+
+      if (!appState.isSavedRecord) {
+        record.recordNumber = takeNextRecordNumber(record.recordDate);
+        document.getElementById("recordNumber").value = record.recordNumber;
+        updateHeaderRecordNumber();
+      }
+
+      record.id = appState.currentRecordId || record.id;
+      record.createdAt = appState.currentCreatedAt || now;
+      record.updatedAt = now;
+
+      var existingIndex = -1;
+      for (var i = 0; i < records.length; i += 1) {
+        if (records[i].id === record.id) {
+          existingIndex = i;
+          break;
+        }
+      }
+
+      if (existingIndex > -1) {
+        records[existingIndex] = record;
+      } else {
+        records.unshift(record);
+      }
+
+      saveRecords(records);
+      appState.isSavedRecord = true;
+      appState.currentRecordId = record.id;
+      appState.currentCreatedAt = record.createdAt;
+      saveDraft(false);
+      renderHistoryList();
+      showStatus("紀錄已儲存到本機歷史紀錄。", "success");
+      setDraftStatus("已儲存");
+    }
+
+    function handleDeleteRecord(recordId) {
+      var records = getRecords();
+      var nextRecords = [];
+      var hasDeleted = false;
+
+      for (var i = 0; i < records.length; i += 1) {
+        if (records[i].id === recordId) {
+          hasDeleted = true;
+        } else {
+          nextRecords.push(records[i]);
+        }
+      }
+
+      if (!hasDeleted) {
+        showStatus("找不到要刪除的紀錄。", "warning");
+        return;
+      }
+
+      saveRecords(nextRecords);
+      renderHistoryList();
+
+      if (appState.currentRecordId === recordId) {
+        createNewRecord();
+      }
+
+      showStatus("已刪除指定歷史紀錄。", "success");
+    }
+
+    // ================================
+    // 歷史紀錄顯示與搜尋
+    // ================================
+
+    function buildHistoryItem(record) {
+      var article = document.createElement("article");
+      article.className = "history-item";
+      article.setAttribute("data-record-id", record.id);
+
+      var eventText = record.eventTypes && record.eventTypes.length ? record.eventTypes.join("、") : "未標記";
+      var timeText = [record.recordDate, record.recordTime].filter(Boolean).join(" ");
+      var updateText = record.updatedAt ? new Date(record.updatedAt).toLocaleString("zh-TW") : "";
+
+      article.innerHTML =
+        '<div class="history-item-top">' +
+          '<div class="history-title">' +
+            '<strong>' + escapeHtml(record.studentName || "未填寫學生姓名") + '</strong>' +
+            '<span class="voice-pill">' + escapeHtml(record.recordNumber || "未編號") + '</span>' +
+          '</div>' +
+          '<div class="history-subtext">' + escapeHtml((record.className || "未填班級") + "｜" + (timeText || "未填日期時間")) + '</div>' +
+          '<div class="history-subtext">地點：' + escapeHtml(record.location || "未填寫") + '｜事件性質：' + escapeHtml(eventText) + '</div>' +
+          '<div class="history-subtext">最近更新：' + escapeHtml(updateText || "未記錄") + '</div>' +
+        '</div>' +
+        '<div class="history-actions">' +
+          '<button class="mini-btn btn-secondary" type="button" data-action="load">載入編輯</button>' +
+          '<button class="mini-btn btn-secondary" type="button" data-action="export">匯出</button>' +
+          '<button class="mini-btn btn-danger" type="button" data-action="delete">刪除</button>' +
+        '</div>';
+
+      return article;
+    }
+
+    function renderHistoryList() {
+      var nameKeyword = document.getElementById("historySearchName").value.trim().toLowerCase();
+      var dateKeyword = document.getElementById("historySearchDate").value;
+      var records = getRecords();
+      var matched = [];
+
+      for (var i = 0; i < records.length; i += 1) {
+        var record = normalizeRecord(records[i]);
+        var nameMatched = !nameKeyword || String(record.studentName || "").toLowerCase().indexOf(nameKeyword) > -1;
+        var dateMatched = !dateKeyword || record.recordDate === dateKeyword;
+        if (nameMatched && dateMatched) {
+          matched.push(record);
+        }
+      }
+
+      historyList.innerHTML = "";
+
+      if (!matched.length) {
+        historyList.innerHTML = '<div class="history-empty">目前沒有符合條件的歷史紀錄。</div>';
+        return;
+      }
+
+      for (var j = 0; j < matched.length; j += 1) {
+        historyList.appendChild(buildHistoryItem(matched[j]));
+      }
+    }
+
+    // ================================
+    // 匯入與匯出
+    // ================================
+
+    function handleExportCurrentRecord() {
+      var record = getCurrentRecord();
+      exportRecordToFile(record);
+      showStatus("已匯出目前紀錄 JSON。", "success");
+    }
+
+    function handleImportFile(event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function (loadEvent) {
+        try {
+          var parsed = safeParse(loadEvent.target.result, null);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+            throw new Error("invalid-json");
+          }
+
+          var importedRecord = normalizeRecord(parsed);
+          var records = getRecords();
+          var existingRecord = null;
+
+          for (var i = 0; i < records.length; i += 1) {
+            if (records[i].id === importedRecord.id) {
+              existingRecord = records[i];
+              break;
+            }
+          }
+
+          if (existingRecord) {
+            var overwrite = window.confirm("此 JSON 對應的紀錄已存在。按下「確定」會覆蓋既有紀錄，按下「取消」則以新紀錄方式載入。");
+            if (!overwrite) {
+              importedRecord.id = generateId();
+              importedRecord.recordNumber = peekNextRecordNumber(importedRecord.recordDate || formatDateInput(new Date()));
+              importedRecord.createdAt = new Date().toISOString();
+              importedRecord.updatedAt = importedRecord.createdAt;
+              loadRecordIntoForm(importedRecord, { isSavedRecord: false });
+              setDraftStatus("匯入為新草稿");
+              showStatus("已將 JSON 載入為新的草稿紀錄。", "success");
+            } else {
+              loadRecordIntoForm(importedRecord, { isSavedRecord: true });
+              showStatus("已載入 JSON，儲存後會覆蓋原有紀錄。", "warning");
+            }
+          } else {
+            loadRecordIntoForm(importedRecord, { isSavedRecord: true });
+            showStatus("已載入 JSON 紀錄，可直接編輯或儲存。", "success");
+          }
+        } catch (error) {
+          showStatus("匯入失敗，請確認 JSON 格式是否正確。", "error");
+        } finally {
+          importFileInput.value = "";
+        }
+      };
+
+      reader.onerror = function () {
+        showStatus("讀取檔案失敗，請重新選擇 JSON 檔。", "error");
+        importFileInput.value = "";
+      };
+
+      reader.readAsText(file, "utf-8");
+    }
+
+    // ================================
+    // 語音辨識控制
+    // ================================
+
+    function setVoiceState(text, tone) {
+      voiceStateText.textContent = text;
+      voiceStateText.className = "voice-pill";
+      if (tone === "warning") {
+        voiceStateText.classList.add("is-warning");
+      } else if (tone === "danger") {
+        voiceStateText.classList.add("is-danger");
+      }
+    }
+
+    function initSpeechRecognition() {
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        appState.speechSupported = false;
+        startVoiceBtn.disabled = true;
+        stopVoiceBtn.disabled = true;
+        setVoiceState("不支援", "danger");
+        voiceHintText.textContent = "此瀏覽器不支援語音輸入，請改用手動輸入。";
+        return;
+      }
+
+      appState.speechSupported = true;
+      appState.recognition = new SpeechRecognition();
+      appState.recognition.lang = "zh-TW";
+      appState.recognition.continuous = true;
+      appState.recognition.interimResults = true;
+      appState.recognition.maxAlternatives = 1;
+
+      appState.recognition.onstart = function () {
+        appState.isRecognizing = true;
+        setVoiceState("辨識中", "warning");
+        voiceHintText.textContent = "請清楚說話，辨識結果會自動寫入「學生陳述內容」。";
+        startVoiceBtn.disabled = true;
+        stopVoiceBtn.disabled = false;
+      };
+
+      appState.recognition.onresult = function (event) {
+        var finalText = "";
+        var interimText = "";
+        for (var i = 0; i < event.results.length; i += 1) {
+          var transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalText += transcript;
+          } else {
+            interimText += transcript;
+          }
+        }
+
+        var combinedText = appState.speechBaseText.replace(/\s+$/g, "");
+        var recognizedText = (finalText + interimText).replace(/\s+/g, " ").trim();
+        if (combinedText && recognizedText) {
+          document.getElementById("studentStatement").value = combinedText + "\n" + recognizedText;
+        } else if (combinedText) {
+          document.getElementById("studentStatement").value = combinedText;
+        } else {
+          document.getElementById("studentStatement").value = recognizedText;
+        }
+        autoResizeTextarea(document.getElementById("studentStatement"));
+        scheduleDraftSave("語音內容更新中...");
+      };
+
+      appState.recognition.onerror = function (event) {
+        var message = "語音辨識發生錯誤，請改用手動輸入。";
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          message = "尚未取得麥克風使用權限，請允許麥克風後再試。";
+        } else if (event.error === "audio-capture") {
+          message = "找不到可用的麥克風裝置。";
+        } else if (event.error === "no-speech") {
+          message = "未偵測到清楚語音，請再試一次。";
+        } else if (event.error === "network") {
+          message = "語音辨識需要穩定網路連線，請確認網路狀態。";
+        } else if (event.error === "aborted") {
+          message = "語音輸入已停止。";
+        }
+
+        setVoiceState("已停止", "danger");
+        voiceHintText.textContent = message;
+        showStatus(message, event.error === "aborted" ? "info" : "warning");
+      };
+
+      appState.recognition.onend = function () {
+        appState.isRecognizing = false;
+        startVoiceBtn.disabled = false;
+        stopVoiceBtn.disabled = true;
+        setVoiceState("已停止", "info");
+        if (!appState.speechManualStop) {
+          voiceHintText.textContent = "語音辨識已停止，如需續錄可再次點選「開始語音輸入」。";
+        }
+        appState.speechManualStop = false;
+      };
+    }
+
+    function startSpeechInput() {
+      if (!appState.speechSupported || !appState.recognition || appState.isRecognizing) {
+        return;
+      }
+      appState.speechBaseText = document.getElementById("studentStatement").value.trim();
+      appState.speechManualStop = false;
+      try {
+        appState.recognition.start();
+      } catch (error) {
+        showStatus("語音辨識暫時無法啟動，請稍候再試或改用手動輸入。", "warning");
+      }
+    }
+
+    function stopSpeechInput() {
+      if (!appState.recognition || !appState.isRecognizing) {
+        return;
+      }
+      appState.speechManualStop = true;
+      appState.recognition.stop();
+    }
+
+    // ================================
+    // 簽名畫布
+    // ================================
+
+    function SignaturePadLite(canvas, onChange) {
+      this.canvas = canvas;
+      this.onChange = onChange;
+      this.ctx = canvas.getContext("2d");
+      this.isDrawing = false;
+      this.isEmpty = true;
+      this.cachedDataUrl = "";
+      this.resize();
+      this.bindEvents();
+    }
+
+    SignaturePadLite.prototype.resize = function () {
+      var previousDataUrl = this.isEmpty ? "" : this.toDataUrl();
+      var ratio = window.devicePixelRatio || 1;
+      var rect = this.canvas.getBoundingClientRect();
+      this.canvas.width = Math.max(Math.floor(rect.width * ratio), 1);
+      this.canvas.height = Math.max(Math.floor(rect.height * ratio), 1);
+      this.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      this.ctx.lineCap = "round";
+      this.ctx.lineJoin = "round";
+      this.ctx.lineWidth = 2.4;
+      this.ctx.strokeStyle = "#17304a";
+      this.ctx.fillStyle = "#17304a";
+      this.drawGuideLine();
+
+      if (previousDataUrl) {
+        this.fromDataUrl(previousDataUrl);
+      } else if (this.cachedDataUrl) {
+        this.fromDataUrl(this.cachedDataUrl);
+      }
+    };
+
+    SignaturePadLite.prototype.drawGuideLine = function () {
+      var width = this.canvas.getBoundingClientRect().width;
+      var height = this.canvas.getBoundingClientRect().height;
+      this.ctx.clearRect(0, 0, width, height);
+      this.ctx.strokeStyle = "#cdd6e2";
+      this.ctx.lineWidth = 1.2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(12, height - 28);
+      this.ctx.lineTo(width - 12, height - 28);
+      this.ctx.stroke();
+      this.ctx.strokeStyle = "#17304a";
+      this.ctx.lineWidth = 2.4;
+    };
+
+    SignaturePadLite.prototype.getPoint = function (event) {
+      var rect = this.canvas.getBoundingClientRect();
+      var clientX = event.clientX;
+      var clientY = event.clientY;
+
+      if (event.touches && event.touches[0]) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else if (event.changedTouches && event.changedTouches[0]) {
+        clientX = event.changedTouches[0].clientX;
+        clientY = event.changedTouches[0].clientY;
+      }
+
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    };
+
+    SignaturePadLite.prototype.startStroke = function (event) {
+      event.preventDefault();
+      var point = this.getPoint(event);
+      this.isDrawing = true;
+      this.isEmpty = false;
+      this.ctx.beginPath();
+      this.ctx.moveTo(point.x, point.y);
+      this.ctx.arc(point.x, point.y, 0.8, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.beginPath();
+      this.ctx.moveTo(point.x, point.y);
+    };
+
+    SignaturePadLite.prototype.moveStroke = function (event) {
+      if (!this.isDrawing) {
+        return;
+      }
+      event.preventDefault();
+      var point = this.getPoint(event);
+      this.ctx.lineTo(point.x, point.y);
+      this.ctx.stroke();
+    };
+
+    SignaturePadLite.prototype.endStroke = function () {
+      if (!this.isDrawing) {
+        return;
+      }
+      this.isDrawing = false;
+      this.cachedDataUrl = this.toDataUrl();
+      if (typeof this.onChange === "function") {
+        this.onChange();
+      }
+    };
+
+    SignaturePadLite.prototype.clear = function () {
+      this.isEmpty = true;
+      this.cachedDataUrl = "";
+      this.drawGuideLine();
+      if (typeof this.onChange === "function") {
+        this.onChange();
+      }
+    };
+
+    SignaturePadLite.prototype.toDataUrl = function () {
+      return this.isEmpty ? "" : this.canvas.toDataURL("image/png");
+    };
+
+    SignaturePadLite.prototype.fromDataUrl = function (dataUrl) {
+      this.drawGuideLine();
+      if (!dataUrl) {
+        this.isEmpty = true;
+        this.cachedDataUrl = "";
+        return;
+      }
+
+      var image = new Image();
+      var self = this;
+      image.onload = function () {
+        var width = self.canvas.getBoundingClientRect().width;
+        var height = self.canvas.getBoundingClientRect().height;
+        self.drawGuideLine();
+        self.ctx.drawImage(image, 0, 0, width, height);
+        self.isEmpty = false;
+        self.cachedDataUrl = dataUrl;
+      };
+      image.src = dataUrl;
+    };
+
+    SignaturePadLite.prototype.bindEvents = function () {
+      var self = this;
+
+      this.canvas.addEventListener("mousedown", function (event) {
+        self.startStroke(event);
+      });
+      this.canvas.addEventListener("mousemove", function (event) {
+        self.moveStroke(event);
+      });
+      this.canvas.addEventListener("mouseup", function () {
+        self.endStroke();
+      });
+      this.canvas.addEventListener("mouseleave", function () {
+        self.endStroke();
+      });
+      this.canvas.addEventListener("touchstart", function (event) {
+        self.startStroke(event);
+      }, { passive: false });
+      this.canvas.addEventListener("touchmove", function (event) {
+        self.moveStroke(event);
+      }, { passive: false });
+      this.canvas.addEventListener("touchend", function () {
+        self.endStroke();
+      });
+      this.canvas.addEventListener("touchcancel", function () {
+        self.endStroke();
+      });
+    };
+
+    function initSignaturePads() {
+      appState.signaturePads.student = new SignaturePadLite(
+        document.getElementById("studentSignatureCanvas"),
+        function () {
+          scheduleDraftSave("學生簽名已更新");
+        }
+      );
+      appState.signaturePads.teacher = new SignaturePadLite(
+        document.getElementById("teacherSignatureCanvas"),
+        function () {
+          scheduleDraftSave("教師簽名已更新");
+        }
+      );
+
+      window.addEventListener("resize", function () {
+        appState.signaturePads.student.resize();
+        appState.signaturePads.teacher.resize();
+      });
+    }
+
+    // ================================
+    // 顯示切換與欄位聯動
+    // ================================
+
+    function setVisibility(elementId, isVisible) {
+      var target = document.getElementById(elementId);
+      if (!target) {
+        return;
+      }
+      target.classList.toggle("is-visible", !!isVisible);
+    }
+
+    function updateConditionalFields() {
+      var eventTypes = getCheckedValues("eventTypes");
+      var statementMode = getSelectedRadioValue("statementMode");
+      var emotionState = getSelectedRadioValue("emotionState");
+
+      setVisibility("eventTypeOtherWrap", eventTypes.indexOf("其他") > -1);
+      setVisibility("statementModeOtherWrap", statementMode === "其他");
+      setVisibility("emotionStateOtherWrap", emotionState === "其他");
+    }
+
+    function refreshDraftRecordNumber() {
+      if (appState.isSavedRecord) {
+        return;
+      }
+      var dateValue = document.getElementById("recordDate").value || formatDateInput(new Date());
+      document.getElementById("recordNumber").value = peekNextRecordNumber(dateValue);
+      updateHeaderRecordNumber();
+    }
+
+    function scrollToTopSafe() {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (error) {
+        window.scrollTo(0, 0);
+      }
+    }
+
+    function toggleHistorySection() {
+      try {
+        historySection.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        historySection.scrollIntoView(true);
+      }
+    }
+
+    // ================================
+    // 事件綁定與初始化
+    // ================================
+
+    function bindEvents() {
+      document.getElementById("newRecordBtn").addEventListener("click", function () {
+        createNewRecord();
+      });
+
+      document.getElementById("saveRecordBtn").addEventListener("click", function () {
+        handleSaveRecord();
+      });
+
+      document.getElementById("printBtn").addEventListener("click", function () {
+        window.print();
+      });
+
+      document.getElementById("exportBtn").addEventListener("click", function () {
+        handleExportCurrentRecord();
+      });
+
+      document.getElementById("importBtn").addEventListener("click", function () {
+        importFileInput.click();
+      });
+
+      document.getElementById("toggleHistoryBtn").addEventListener("click", function () {
+        toggleHistorySection();
+      });
+
+      document.getElementById("clearSearchBtn").addEventListener("click", function () {
+        document.getElementById("historySearchName").value = "";
+        document.getElementById("historySearchDate").value = "";
+        renderHistoryList();
+      });
+
+      document.getElementById("clearStudentSignatureBtn").addEventListener("click", function () {
+        appState.signaturePads.student.clear();
+      });
+
+      document.getElementById("clearTeacherSignatureBtn").addEventListener("click", function () {
+        appState.signaturePads.teacher.clear();
+      });
+
+      startVoiceBtn.addEventListener("click", function () {
+        startSpeechInput();
+      });
+
+      stopVoiceBtn.addEventListener("click", function () {
+        stopSpeechInput();
+      });
+
+      importFileInput.addEventListener("change", handleImportFile);
+
+      document.getElementById("historySearchName").addEventListener("input", renderHistoryList);
+      document.getElementById("historySearchDate").addEventListener("input", renderHistoryList);
+
+      form.addEventListener("input", function (event) {
+        var target = event.target;
+        if (target.tagName === "TEXTAREA") {
+          autoResizeTextarea(target);
+        }
+        if (target.id === "recordDate") {
+          refreshDraftRecordNumber();
+        }
+        updateConditionalFields();
+        scheduleDraftSave("草稿更新中...");
+      });
+
+      form.addEventListener("change", function () {
+        updateConditionalFields();
+        scheduleDraftSave("草稿更新中...");
+      });
+
+      historyList.addEventListener("click", function (event) {
+        var actionButton = event.target.closest("button[data-action]");
+        if (!actionButton) {
+          return;
+        }
+
+        var action = actionButton.getAttribute("data-action");
+        var historyItem = actionButton.closest("[data-record-id]");
+        var recordId = historyItem ? historyItem.getAttribute("data-record-id") : "";
+        var records = getRecords();
+        var selected = null;
+
+        for (var i = 0; i < records.length; i += 1) {
+          if (records[i].id === recordId) {
+            selected = normalizeRecord(records[i]);
+            break;
+          }
+        }
+
+        if (!selected) {
+          showStatus("找不到指定的歷史紀錄。", "warning");
+          return;
+        }
+
+        if (action === "load") {
+          loadRecordIntoForm(selected, { isSavedRecord: true });
+          showStatus("已載入歷史紀錄，可直接編輯與列印。", "success");
+          scrollToTopSafe();
+        } else if (action === "export") {
+          exportRecordToFile(selected);
+          showStatus("已匯出所選歷史紀錄。", "success");
+        } else if (action === "delete") {
+          if (window.confirm("確定要刪除此筆歷史紀錄嗎？此動作無法復原。")) {
+            handleDeleteRecord(selected.id);
+          }
+        }
+      });
+
+      var quickButtons = document.querySelectorAll(".quick-btn");
+      for (var i = 0; i < quickButtons.length; i += 1) {
+        quickButtons[i].addEventListener("click", function () {
+          var textarea = document.getElementById(this.getAttribute("data-target"));
+          var text = this.getAttribute("data-text");
+          appendTextToTextarea(textarea, text);
+          textarea.focus();
+        });
+      }
+    }
+
+    function init() {
+      initSignaturePads();
+      bindEvents();
+      initSpeechRecognition();
+      loadDraft();
+      renderHistoryList();
+      updateConditionalFields();
+      autoResizeAllTextareas();
+      updateHeaderRecordNumber();
+    }
+
+    init();
+  </script>
+</body>
+</html>
